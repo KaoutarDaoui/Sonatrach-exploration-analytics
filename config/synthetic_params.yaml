@@ -1,0 +1,195 @@
+# =============================================================================
+# Paramètres du générateur de données synthétiques (CLAUDE.md §6)
+# Ce sont des HYPOTHÈSES DE DÉPART inspirées de la littérature, PAS des mesures
+# Sonatrach. Les corrélations qu'un modèle retrouvera sur ce jeu sont celles que
+# ces paramètres y ont mises.
+# Coûts : même unité que les CSV réels (⚠️ milliers de DA supposés), sans conversion.
+# =============================================================================
+
+seed: 20260928
+as_of_date: "2026-09-28"          # aucune donnée simulée après cette date
+
+# --- Marquage de l'origine (§6.2) ---------------------------------------------
+synthetic_key_offset: 100000      # sk/pk >= 100000 = purement synthétique
+
+# --- Volumes (§6.3) -------------------------------------------------------------
+n_perimetres: 120
+n_contrats: 300
+contrats_par_perimetre_max: 4
+part_contrats_jamais_actives: 0.06
+part_perimetres_offshore: 0.05
+min_phases_exploitables: 500
+# Détail journalier du forage : phases entièrement couvertes jusqu'à ce plafond
+# (le mensuel existe pour tous les puits). Jamais de phase couverte à moitié.
+forage_journalier_max_lignes: 120000
+
+# --- Contrats et phases -----------------------------------------------------------
+mix_type_contrat:
+  "CONTRAT DE RECHERCHE": 0.59
+  "CONCESSION AMONT": 0.33
+  "ACPO": 0.08                    # prospection : aucune ligne d'engagement
+part_partenariat_si_operateur_sh: 0.20
+n_phases_regulieres: {2: 0.25, 3: 0.75}      # + éventuelle prorogation => 2 à 4 phases
+duree_phase_mois:                             # [min, max]
+  "PHASE 1": [30, 48]
+  "PHASE 2": [18, 36]
+  "PHASE 3": [18, 30]
+  "PROROG.": [6, 18]                          # 18 mois maximum (BPMN)
+  "ACPO": [12, 24]
+delai_signature_vigueur_jours: [30, 180]
+ecart_entre_contrats_jours: [560, 1300]       # >= 18 mois : laisse la place à une prorogation
+recul_derniere_signature_jours: [700, 4000]   # dernière signature entre ~11 ans et ~2 ans avant as_of
+
+# Décisions de fin de phase (BPMN Fig. 3.4/3.5), probabilités lisses, sans seuil de classe
+restitution_logit: {intercept: -2.6, pente: -3.0, pivot: 0.8}   # p = sigmoid(i + pente*(exec - pivot))
+p_passage_production_si_decouverte: 0.30   # seulement à partir de la phase 2
+p_prorogation_sans_decouverte: 0.35
+p_surface_rendue: 0.75
+surface_rendue_frac: [0.10, 0.30]
+surface_rendue_frac_si_exec_bas: [0.26, 0.30]
+exec_bas: 0.6
+
+# --- Périmètres (§1.7, §6.5) ------------------------------------------------------
+class_mix:
+  "NEAR FIELD EMERGEANT": 0.40
+  "NEAR FIELD MATURE": 0.15
+  "FRONTIER EMERGEANT": 0.22
+  "FRONTIER MATURE": 0.12
+  "UNKNOWN": 0.08
+  null: 0.03
+geo_quality_poids_distance: 0.6     # geo_quality = -0.6*distance_std + sqrt(1-0.36)*bruit
+bruit_classification: 0.3           # classification = rang(-distance_std + bruit) : corrélation imparfaite
+superficie_km2: {mediane: 3000, sigma: 0.6, min: 400, max: 15000}
+operateurs_partenaires: 8
+operateur_skill_sd: 0.10
+p_operateur_partenaire: 0.30
+
+# Départements : poids de tirage, boîte géographique (lon_min, lat_min, lon_max, lat_max),
+# facteur de coût, probabilité gaz, profondeur cible [min, max] en m, asset (<= 15 car.)
+departements:
+  "TELL OFFSHORE":         {poids: 0.00, boite: [2.0, 36.95, 8.0, 37.45], cout: 1.00, p_gaz: 0.60, prof: [2000, 4000], asset: "ASSET NORD"}
+  "ATLAS":                 {poids: 0.09, boite: [0.5, 33.6, 4.5, 35.2],  cout: 1.10, p_gaz: 0.50, prof: [2000, 4500], asset: "ASSET NORD"}
+  "SUD-EST CONSTANTINOIS": {poids: 0.07, boite: [5.5, 34.6, 8.3, 35.9],  cout: 1.00, p_gaz: 0.50, prof: [2000, 4000], asset: "ASSET NORD"}
+  "AMGUID MESSAOUD":       {poids: 0.12, boite: [5.0, 29.6, 7.4, 31.9],  cout: 1.00, p_gaz: 0.25, prof: [3000, 4500], asset: "ASSET CENTRE"}
+  "OUED MYA":              {poids: 0.12, boite: [3.6, 30.2, 5.4, 32.4],  cout: 0.90, p_gaz: 0.35, prof: [2500, 4000], asset: "ASSET CENTRE"}
+  "BECHAR/OUED NAMOUS":    {poids: 0.06, boite: [-2.5, 30.2, 0.4, 32.4], cout: 1.15, p_gaz: 0.70, prof: [2000, 4000], asset: "ASSET OUEST"}
+  "TIND REGGANE SBAA":     {poids: 0.07, boite: [-7.5, 26.2, -0.2, 29.4], cout: 1.20, p_gaz: 0.75, prof: [2000, 4000], asset: "ASSET OUEST"}
+  "AHNET GOURARA":         {poids: 0.08, boite: [0.2, 26.2, 2.9, 29.8],  cout: 1.10, p_gaz: 0.85, prof: [2000, 3800], asset: "ASSET OUEST"}
+  "ILLIZI":                {poids: 0.13, boite: [7.6, 26.2, 9.9, 29.4],  cout: 1.05, p_gaz: 0.50, prof: [2000, 4000], asset: "ASSET EST"}
+  "BERKINE EST":           {poids: 0.13, boite: [8.4, 29.6, 9.7, 31.9],  cout: 0.95, p_gaz: 0.30, prof: [3000, 4500], asset: "ASSET EST"}
+  "BERKINE OUEST":         {poids: 0.13, boite: [7.1, 30.1, 8.3, 32.4],  cout: 0.95, p_gaz: 0.30, prof: [3000, 4500], asset: "ASSET EST"}
+# (TELL OFFSHORE est tiré via part_perimetres_offshore, d'où poids 0 ci-dessus)
+
+# Gisements « historiques » (connus avant la période simulée) : latents, NON stockés.
+# Ils fixent la proximité near field / frontier. Nombre par département.
+gisements_historiques:
+  "BERKINE EST": 7
+  "BERKINE OUEST": 6
+  "OUED MYA": 8
+  "AMGUID MESSAOUD": 9
+  "ILLIZI": 7
+  "AHNET GOURARA": 3
+  "TIND REGGANE SBAA": 2
+  "SUD-EST CONSTANTINOIS": 2
+  "ATLAS": 1
+  "BECHAR/OUED NAMOUS": 1
+
+# --- Probabilité de découverte (§6.5) -------------------------------------------
+# logit(p) = base_classe + coef_geo*geo_quality + coef_distance*ln(1 + distance_km/10) + bruit
+# distance_km = distance au gisement connu le plus proche (historiques + découvertes antérieures)
+# base_classe est CALIBRÉE par le générateur pour atteindre ces taux moyens.
+taux_decouverte_cible:
+  "NEAR FIELD MATURE": 0.50
+  "NEAR FIELD EMERGEANT": 0.35
+  "FRONTIER MATURE": 0.15
+  "FRONTIER EMERGEANT": 0.08
+  "UNKNOWN": 0.20                 # ⚠️ hypothèse (non précisée dans CLAUDE.md)
+coef_geo_quality: 0.8
+coef_distance: -0.6
+bruit_logit_sd: 0.5
+iterations_calibration: 5     # recalage des bases sur les taux simulés (les découvertes rapprochent les gisements)
+delineation_logit_base: 0.4       # délinéation (après découverte) : p moyen ≈ 0.6
+delineation_logit_sans_decouverte: -0.9
+p_abandonne_si_echec: 0.15        # sinon SEC
+p_injecteur_si_succes_delineation: 0.03
+
+# --- Programme d'engagement par phase ----------------------------------------------
+engagement:
+  phase1: {p_acq2d: 0.65, p_acq3d: 0.45, p_ret2d: 0.30, p_ret3d: 0.15, wc: [0, 3], del_si_decouverte: [0, 1]}
+  suivantes: {p_acq2d: 0.25, p_acq3d: 0.35, p_ret2d: 0.20, p_ret3d: 0.10, wc: [1, 5], del_si_decouverte: [0, 3]}
+  prorogation: {p_acq2d: 0.00, p_acq3d: 0.15, p_ret2d: 0.10, p_ret3d: 0.05, wc: [0, 2], del_si_decouverte: [0, 2]}
+  km_acq2d: {mediane: 1000, sigma: 0.5, min: 200, max: 4000}
+  km2_acq3d: {mediane: 600, sigma: 0.5, min: 100, max: 2500}
+  km_ret2d: {mediane: 1500, sigma: 0.5, min: 300, max: 5000}
+  km2_ret3d: {mediane: 700, sigma: 0.5, min: 150, max: 2500}
+  part_phases_couts_null: 0.015   # engagement présent mais coûts NULL (donnée manquante)
+
+# --- Exécution des engagements (§6.5) -------------------------------------------
+# ratio réel/engagé ~ lognormale, moyenne selon la classification
+ratio_execution_moyen:
+  "NEAR FIELD MATURE": 1.00
+  "NEAR FIELD EMERGEANT": 0.95
+  "FRONTIER MATURE": 0.85
+  "FRONTIER EMERGEANT": 0.75
+  "UNKNOWN": 0.85
+ratio_execution_sigma: 0.40
+bonus_partenariat: 0.05
+p_abandon_apres_2_secs: 0.35      # puits secs répétés -> abandon du reste du programme
+p_delineation_supplementaire: 0.30
+p_suivi_sismique_absent: 0.03     # phase dont la sismique engagée n'a aucun suivi
+cout_phase_sigma: 0.15            # écart coût unitaire réel / estimé, par phase
+
+# --- Coûts et cadences (§5.7, §6.5), alignés sur les CSV réels ------------------
+forage:
+  taux_journalier: 6500           # coût/jour d'appareil (≈ 400 000 pour un puits typique)
+  taux_sigma: 0.10
+  majoration_offshore: 1.8
+  avancement_m_jour: {mediane: 45, sigma: 0.35, min: 20, max: 150}
+  jours_npt_p: 0.08
+  jours_essais: [3, 12]
+  duree_jours: [30, 300]
+  mobilisation_jours: [5, 40]
+sismique:
+  acq2d: {km_jour: 15, cout_jour: 5400}
+  acq3d: {km_jour: 8, cout_jour: 7000}
+  ret2d: {km_jour: 120, cout_jour: 2500}
+  ret3d: {km_jour: 70, cout_jour: 2800}
+  km_jour_sigma: 0.25
+  cout_jour_sigma: 0.20
+  p_campagne_cout_eleve: 0.10     # régime observé sur la campagne réelle 32 (≈ 46 000/jour)
+  facteur_cout_eleve: [6, 10]
+  p_jour_extreme: 0.01
+  facteur_jour_extreme: [3, 8]
+  p_npt_renseigne: 0.45           # npt vide sur ~55 % des jours réels
+  p_jour_npt: 0.10
+
+# --- Données manquantes voulues (§6.1, §6.7) -----------------------------------
+part_puits_sans_cout: 0.07        # puits dont aucun coût mensuel n'est saisi
+part_phases_saisie_lacunaire: 0.25  # phases mal renseignées (les trous se concentrent là)
+part_lignes_cout_null: 0.08       # trous de saisie dans ces phases
+
+# --- Réserves (§6.5) --------------------------------------------------------------
+reserves:
+  p2_mediane: 0.15                # ⚠️ millions de TEP supposés ; ordre 0,00–0,26 observé
+  p2_sigma: 0.9
+  effet_geo: 0.4
+  facteur_delineation: 0.5
+  p_p1_nul: 0.30
+  p2_sur_p1: [1.25, 2.4]
+  p3_sur_p2: [1.15, 2.0]
+  delai_estimation_jours: [30, 300]
+  intervalle_revision_jours: [180, 720]
+  revisions: [1, 4]
+  derive_revision: 0.15
+  reservoirs_par_puits: [1, 3]
+  p_reservoir_secondaire_indice: 0.6
+  indice_p3: [0.005, 0.05]
+
+# --- Demandes ALNAFT ------------------------------------------------------------------
+demandes:
+  delai_mediane_jours: 60
+  delai_sigma: 0.6
+  p_sans_reponse: 0.05
+  p_demande_diverse_par_phase: 0.35
+  p_motif_inconnu: 0.02           # quelques faits pointent sur sk = 0
+

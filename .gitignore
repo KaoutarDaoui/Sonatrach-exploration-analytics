@@ -1,0 +1,43 @@
+# --- Secrets : jamais versionnés -------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# --- Données réelles Sonatrach : ne jamais pousser sur un dépôt distant ------------
+data/real/*
+!data/real/.gitkeep
+
+# --- Données dérivées (régénérables avec python -m src.export_features) -----------
+data/processed/
+*.parquet
+
+# --- Python ---------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# --- Jupyter --------------------------------------------------------------------------
+.ipynb_checkpoints/
+
+# --- Outils hors projet (SDK JavaScript, skills d'agents) -----------------------------
+node_modules/
+package.json
+package-lock.json
+.agents/
+skills-lock.json
+
+# --- Journaux, système, éditeurs ------------------------------------------------------
+*.log
+Thumbs.db
+desktop.ini
+.DS_Store
+.vscode/
+.idea/
+
+# --- Fichiers d'un autre projet (cf. CLAUDE.md §3.1) ----------------------------------
+Attributs_par_type_de_publication_jobboard*.xlsx
+
+CLAUDE.md
+docs/

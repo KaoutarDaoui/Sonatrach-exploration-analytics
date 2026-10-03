@@ -1,0 +1,12 @@
+pandas>=2.1
+numpy>=1.26
+psycopg[binary]>=3.1
+pyyaml>=6.0
+python-dotenv>=1.0
+pyarrow>=15.0
+# Notebooks de clustering
+kmodes>=0.12
+gower>=0.1
+scikit-learn>=1.4
+matplotlib>=3.8
+ipykernel>=6.0
