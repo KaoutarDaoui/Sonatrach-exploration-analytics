@@ -453,6 +453,7 @@ def main() -> None:
               f"{sum(1 for l in R.lignes if l[2])}/{len(R.lignes)} contrôles OK.\n\n"
               "> Données majoritairement synthétiques : les corrélations qu'un modèle retrouve sur ce jeu sont celles que le "
               "générateur y a mises (voir docs/ASSUMPTIONS.md).")
+    (RACINE / "docs").mkdir(exist_ok=True)   # docs/ peut être absent (non versionné)
     (RACINE / "docs" / "VALIDATION_REPORT.md").write_text(R.markdown(entete), encoding="utf-8")
     print(f"\n{'OK' if ok else 'ÉCHEC'} : {len(R.echecs)} test(s) critique(s) en échec. Rapport : docs/VALIDATION_REPORT.md")
     sys.exit(0 if ok else 1)
